@@ -54,26 +54,41 @@ for fold, (train_index, test_index) in enumerate(kf.split(data)):
     
     # Split training data further into train and validation sets
     X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.1, random_state=42)
-    
-    # Apply transformation techniques to each dataset
-    for technique in transformation_list:
-        # Apply transformation to train set
-        transformed_train = apply_transformation(technique, X_train)
 
-        # Apply transformation to test set
-        transformed_test = apply_transformation(technique, X_test)
+import numpy as np
+import cv2
 
-        # Apply transformation to validation set
-        transformed_valid = apply_transformation(technique, X_valid)
+def resize_data(data):
+    resized_data = []
+    for block in data:
+        resized_blocks = [cv2.resize(block, (32, 32)) for block in block]
+        resized_data.append(resized_blocks)
+    return np.array(resized_data)
 
-        # Combine generated data for each split in each data group
-        combined_train = combine_data([transformed_train])
-        combined_test = combine_data([transformed_test])
-        combined_valid = combine_data([transformed_valid])
+# Apply transformation techniques to each dataset
+for technique in transformation_list:
+    # Apply transformation to train set
+    transformed_train = apply_transformation(technique, X_train)
 
-        # Save combined datasets
-        save_path = f'/path/to/save/{technique}/fold_{fold+1}'
-        os.makedirs(save_path, exist_ok=True)
-        np.save(f'{save_path}/train.npy', combined_train)
-        np.save(f'{save_path}/test.npy', combined_test)
-        np.save(f'{save_path}/valid.npy', combined_valid)
+    # Apply transformation to test set
+    transformed_test = apply_transformation(technique, X_test)
+
+    # Apply transformation to validation set
+    transformed_valid = apply_transformation(technique, X_valid)
+
+    # Resize the data
+    resized_train = resize_data(transformed_train)
+    resized_test = resize_data(transformed_test)
+    resized_valid = resize_data(transformed_valid)
+
+    # Combine generated data for each split in each data group
+    combined_train = combine_data([resized_train])
+    combined_test = combine_data([resized_test])
+    combined_valid = combine_data([resized_valid])
+
+    # Save combined datasets
+    save_path = f'/path/to/save/{technique}/fold_{fold+1}'
+    os.makedirs(save_path, exist_ok=True)
+    np.save(f'{save_path}/train.npy', combined_train)
+    np.save(f'{save_path}/test.npy', combined_test)
+    np.save(f'{save_path}/valid.npy', combined_valid)
