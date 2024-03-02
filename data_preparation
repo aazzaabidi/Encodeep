@@ -1,0 +1,79 @@
+import os
+import numpy as np
+from sklearn.model_selection import KFold
+from sklearn.model_selection import train_test_split
+from Techniques import GADF
+from pyts.image import GramianAngularField, MarkovTransitionField, RecurrencePlot
+
+# Function to load data from numpy files
+def load_data(folder_path):
+    files = os.listdir(folder_path)
+    data = []
+    for file in files:
+        if file.endswith('.npy'):
+            data.append(np.load(os.path.join(folder_path, file)))
+    return np.array(data)
+
+# Function to apply transformation techniques
+def apply_transformation(technique, data):
+    print(f'Applying {technique} transformation')
+    if technique == 'GADF':
+        transformer = GADF()
+    elif technique == 'GASF':
+        transformer = GramianAngularField()
+    elif technique == 'MTF':
+        transformer = MarkovTransitionField()
+    elif technique == 'RP':
+        transformer = RecurrencePlot()
+    else:
+        print("Invalid transformation technique.")
+        return
+    
+    transformed_data = transformer.transform(data)
+    return transformed_data
+
+# Function to combine generated data for each split in each data group
+def combine_data(data_list):
+    return np.stack(data_list, axis=-1)
+
+# Load satellite image time series data and labels
+data_folder = '/path/to/satellite/data/folder'
+labels_folder = '/path/to/labels/folder'
+data = load_data(data_folder)
+labels = load_data(labels_folder)
+
+# Define transformation techniques
+transformation_list = ['GADF', 'GASF', 'MTF', 'RP']
+
+# Perform 5-fold cross-validation
+kf = KFold(n_splits=5, shuffle=True, random_state=42)
+for fold, (train_index, test_index) in enumerate(kf.split(data)):
+    print(f'Fold {fold + 1}:')
+    X_train, X_test = data[train_index], data[test_index]
+    y_train, y_test = labels[train_index], labels[test_index]
+    
+    # Split training data further into train and validation sets
+    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.1, random_state=42)
+    
+    # Apply transformation techniques to each dataset
+    for technique in transformation_list:
+        # Apply transformation to train set
+        transformed_train = apply_transformation(technique, X_train)
+
+        # Apply transformation to test set
+        transformed_test = apply_transformation(technique, X_test)
+
+        # Apply transformation to validation set
+        transformed_valid = apply_transformation(technique, X_valid)
+
+        # Combine generated data for each split in each data group
+        combined_train = combine_data([transformed_train])
+        combined_test = combine_data([transformed_test])
+        combined_valid = combine_data([transformed_valid])
+
+        # Save combined datasets
+        save_path = f'/path/to/save/{technique}/fold_{fold+1}'
+        os.makedirs(save_path, exist_ok=True)
+        np.save(f'{save_path}/train.npy', combined_train)
+        np.save(f'{save_path}/test.npy', combined_test)
+        np.save(f'{save_path}/valid.npy', combined_valid)
