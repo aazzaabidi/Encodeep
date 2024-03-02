@@ -14,7 +14,6 @@ The whole pipeline consists of a total of three distinct steps. The first step i
 - scikit-learn
 - PyTorch
 - PyTorch Image
-- PyWavelets
 - TensorFlow 2.x
 - Pandas
 - Seaborn
@@ -66,7 +65,6 @@ Before running the main script, ensure that the satellite image time series data
 
 - [PyTorch](https://pytorch.org/)
 - [scikit-learn](https://scikit-learn.org/)
-- [PyWavelets](https://pywavelets.readthedocs.io/en/latest/)
 
 --- 
 
